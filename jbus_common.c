@@ -9,6 +9,7 @@
 #include "rtcAccess.h"
 #include "lcdDisplay.h"
 #include "analogicIO.h"
+#include "calibration.h"
 #include "modbus/port/port.h"
 #include "modbus/include/mb.h"
 #include "modbus/include/mbport.h"
@@ -52,8 +53,8 @@ const  uint32_t protectedRegHoldingBase= 1666;
 
 typedef enum  {LCD1=0, LCD2, JOUR, MOIS, ANNEE, JOUR_SEMAINE, HEURE, MINUTE, SECONDE, 
 	       CONSIGNE, VITESSE_MAX, REG_HOLDING_END} RegHolding;
-typedef enum  {POS_COURANTE=0, VITESSE_COURANTE, POSITION_PARK, POS_POTAR_SERVO, 
-	       INTENSITE_SERVO, REG_INPUT_END} RegInput;
+typedef enum  {POS_COURANTE=0, VITESSE_COURANTE, POSITION_PARK, POS_POTAR_SERVO_RAW,
+	       POS_POTAR_SERVO_HOMOGENE, INTENSITE_SERVO, REG_INPUT_END} RegInput;
 typedef enum  {SETPARK=0, GOTO_PARK, REG_COIL_END} RegCoil;
 typedef enum  {MOVING=0, JAMED, ENABLED, BUTEE_MIN, BUTEE_MAX, REG_DISCRETE_END} RegDiscrete;
 typedef enum  {PASSWD1, PASSWD2, ADRJBUS, BAUD, NBBITSSTOP,  PARITE,
@@ -180,8 +181,8 @@ eMBRegInputCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs )
   setLastAddress (usAddress);
   setLastNbReg (usNRegs);
 
-  if (isItValidAdress (usAddress, regInputBase, REG_INPUT_END*SERVO_COUNT) &&
-      isItValidAdress (usAddress+usNRegs, regInputBase, REG_INPUT_END*SERVO_COUNT)) {
+  if (isItValidAdress (usAddress, regInputBase, (REG_INPUT_END*SERVO_COUNT)+1) &&
+      isItValidAdress (usAddress+usNRegs, regInputBase, (REG_INPUT_END*SERVO_COUNT)+1)) {
     iRegIndex = (uint32_t) usAddress - regInputBase;
     while (usNRegs > 0) {
       if (getRegInputValue (iRegIndex, &curPucReg) == FALSE) {
@@ -717,8 +718,12 @@ static bool_t getRegInputValue (uint16_t iRegIndex, uint8_t **curPucReg)
     storeReg (curPucReg, normalisedToReg (servoGetParkPos (servoNum)));
     break;
     
-  case POS_POTAR_SERVO:
+  case POS_POTAR_SERVO_RAW:
     storeReg (curPucReg, normalisedToReg (analogGetRawPos (servoNum)));
+    break;
+
+  case POS_POTAR_SERVO_HOMOGENE:
+    storeReg (curPucReg, normalisedToReg (getReadPosNormalised (servoNum)));
     break;
     
     // in milliamp

@@ -26,10 +26,12 @@
 #include "servo_pwm.h"
 #include "lcdDisplay.h"
 #include "IOmode.h"
+#include "calibration.h"
 #include "printf.h"
+#include "bitband.h"
 #include <string.h>
 #include <math.h>
-#include "bitband.h"
+
 
 const float max_current_intensity_calib[SERVO_COUNT] = {
   0.100f, // turret
@@ -130,6 +132,7 @@ _Static_assert(  ARRAY_LEN(servos) == SERVO_COUNT,
 		"servos and servoStates should be array of same"
 		" length than macro SERVO_COUNT defined in servo_pwm.h");
 
+static void servoSetCurrentPos (const uint32_t servoIdx, float pos);
 static float getAccelToOrder (const ServoState *st);
 static float getMaxAccel ( const ServoState *st, const float dt, const float dist);
 static void initAccel (ServoState *st);
@@ -203,6 +206,20 @@ void timerAndPwmInit (void)
 #endif
 
 
+void servoInitAllCurrentPosAndGotoPark (const float backupCurPosIfNotCalibrated[SERVO_COUNT])
+{
+    for (uint32_t servoIdx=0; servoIdx<SERVO_COUNT; servoIdx++) {  
+      if (isCalibrated()) {
+	servoSetCurrentPos (servoIdx, getReadPosNormalised (servoIdx));
+      } else if (backupCurPosIfNotCalibrated != NULL) {
+	servoSetCurrentPos (servoIdx, backupCurPosIfNotCalibrated[servoIdx]);
+      } else {
+	servoSetCurrentPos (servoIdx, servoGetParkPos(servoIdx));
+      }
+      servoSetPos (servoIdx, CLAMP_TO(0.0f, 1.0f, servoStates[servoIdx].parkPos));
+    }
+}
+
 void initAllServos (void)
 {
   timerAndPwmInit();
@@ -214,18 +231,19 @@ void initAllServos (void)
   getServoStatesFromEeprom ();
   
   for (uint32_t i = 0; i < SERVO_COUNT; i++) {
-    servoStates[i].currentPos = servoStates[i].orderPos = 
-      CLAMP_TO(0.0f, 1.0f, servoStates[i].parkPos);
     initAccel (&servoStates[i]);
   }
+  
+  servoInitAllCurrentPosAndGotoPark (NULL);
+
 }
 
 void servoInit (const uint32_t servoIdx)
 {
   ServoState *st = &servoStates[servoIdx];
 
+  chMtxInit(&st->mutex);
   st->currentPos = 0.0f;
-  st->orderPos = 0.0f;
   st->parkPos = 0.5f;
   st->topSpeed = 1/3.0f;
   st->currentSpeed = 0.0f;
@@ -234,7 +252,6 @@ void servoInit (const uint32_t servoIdx)
   st->lastPwm = 1;    // not set
   st->engaged = TRUE; // servo driven @ power on, if something goes wrong, security will play
   initAccel (st);
-  chMtxInit(&st->mutex);
 }
 
 void servoSetCurrentPosAsPark (const uint32_t servoIdx)
@@ -252,6 +269,21 @@ void servoSetCurrentPosAsPark (const uint32_t servoIdx)
 void servoSetPosI (ServoState *st, float order)
 {
   st->orderPos =  CLAMP_TO(0.0f, 1.0f, order);
+}
+
+static void servoSetCurrentPos (const uint32_t servoIdx, float pos)
+{
+  if (servoIdx >= SERVO_COUNT) 
+    return;
+
+  ServoState *st = &servoStates[servoIdx];
+
+  if (pos ==  st->currentPos) 
+    return;
+
+  chMtxLock(&st->mutex);
+  st->currentPos = pos;
+  chMtxUnlock();
 }
 
 void servoSetPos (const uint32_t servoIdx, float order)
@@ -511,6 +543,11 @@ void servoPeriodicMove (const uint32_t servoIdx, float timeInSecond)
    */
   if (servoIdx >= SERVO_COUNT) 
     return;
+
+  // not to interfere when we calibrate
+  if ((getMode() == Mode_Tuning) || (getMode() == IO_mode_Off))
+    return;
+
   ServoState *st = &servoStates[servoIdx];
   chMtxLock(&st->mutex);
   float dist = st->orderPos - st->currentPos;
@@ -601,7 +638,12 @@ void servoEngage (const uint32_t servoIdx)
     }
   } else if (servoIdx < SERVO_COUNT) {
     ServoState *st = &servoStates[servoIdx];
-    st->engaged = TRUE;
+    if (st->engaged != TRUE) {
+      if (isCalibrated()) {
+	servoSetCurrentPos (servoIdx, getReadPosNormalised (servoIdx));
+      }
+      st->engaged = TRUE;
+    }
   }
 }
 
@@ -728,7 +770,9 @@ ErrorCond getServoStatesFromEeprom (void)
   retVal = eepromLoad (EEPROM_SERVO, buffer, sizeToRestore*SERVO_COUNT);
   if ((retVal ==  PROG_OK) || (retVal ==  PROGRAM_MODIFIED)) {
     for (uint32_t i=0; i<SERVO_COUNT; i++) {
+      chMtxLock (&(servoStates[0].mutex));
       memcpy (ptrTo, ptrFrom, sizeToRestore);
+      chMtxUnlock();
       ptrFrom+=sizeToRestore;
       ptrTo+=sizeof(servoStates[0]);
     }

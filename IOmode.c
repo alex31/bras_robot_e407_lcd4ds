@@ -115,8 +115,12 @@ enum IOThreads_bits getIoThreads (enum IO_bits iobit)
 void setMode (enum IO_modes mode)
 {
   const enum IO_bits nextIoBits = getIoBits (mode);
-  
-  
+  float oldCurrentPos[SERVO_COUNT];
+
+  for (uint32_t i=0; i<SERVO_COUNT; i++) {  
+    oldCurrentPos[i]=servoGetCurrentPos(i);
+  }
+
   static const char *modeName[] = {
     "IO_mode_Off", 
     "Mode_Logic", "Mode_Analog_Pos", "Mode_Analog_Calib", "Mode_Jbus485", "Mode_JbusEther", 
@@ -128,14 +132,9 @@ void setMode (enum IO_modes mode)
     // if we quit ethernet mode, we have to reset
     // because i don't know how to reinitialise
     // freemodbus and lwip states
-    bool_t hasToReset = (ioMode == Mode_JbusEther);
     ioMode = mode;
     DebugTrace ("input mode %s", modeName[mode]);
     syslog (LOG_INFO, "mode %s", modeName[mode]);
-    
-    if (hasToReset) {
-      //      systemReset ();
-    }
     
     if (isArmBoardPlugged() || jumperDebugPresent) {
       // for any mode change, we park the arm
@@ -158,6 +157,7 @@ void setMode (enum IO_modes mode)
       
       // restore init speed
       getServoStatesFromEeprom ();
+      servoInitAllCurrentPosAndGotoPark (oldCurrentPos);
       manageThreadAccordingToMode (ioBits, nextIoBits);
       ioBits = nextIoBits;
     }

@@ -84,9 +84,13 @@ static void cmd_calib(BaseSequentialStream *chp, int argc,
   const char* calibKind = argv[0];
 
   if (strcmp (calibKind, "search") == 0) {
-     chprintf (chp, "lancement de la calibration\r\n");
-     calibratePwmRange ();
-     chprintf (chp, "calibration terminée (pwm info pour voir)\r\n");
+    if ((getMode() != Mode_Tuning) && (getMode() != IO_mode_Off)) {
+      chprintf (chp, "calibration impossible si mode autre que Reglage ou Off\r\n");
+    } else {
+      chprintf (chp, "lancement de la calibration\r\n");
+      calibratePwmRange ();
+      chprintf (chp, "calibration terminée (pwm info pour voir)\r\n");
+    }
   } else if (strcmp (calibKind, "store") == 0) {
      chprintf (chp, "store pwmPos in eeprom\r\n");
      storePwmByPosToEeprom ();
@@ -109,15 +113,15 @@ static void cmd_calib(BaseSequentialStream *chp, int argc,
     
   }
   
-  for (uint32_t calIdx=0; calIdx<512; calIdx +=10) {
-    const float pos = 512.f/calIdx;
+  for (uint32_t calIdx=0; calIdx<CALIBRATION_TABLE_SIZE; calIdx +=10) {
+    const float pos = (float)calIdx/512;
     chprintf (chp, "CAL[%.3f] = [%d] [%d] [%d] [%d] [%d]\r\n",
 	      pos,
-	      getPwmByPos (0, pos),
-	      getPwmByPos (1, pos),
-	      getPwmByPos (2, pos),
-	      getPwmByPos (3, pos),
-	      getPwmByPos (4, pos));
+	      getPwmByReadPos (0, pos),
+	      getPwmByReadPos (1, pos),
+	      getPwmByReadPos (2, pos),
+	      getPwmByReadPos (3, pos),
+	      getPwmByReadPos (4, pos));
   }
   
 }

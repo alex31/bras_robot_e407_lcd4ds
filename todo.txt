@@ -1,0 +1,64 @@
+
+
+° TODO: analyseur statique (coverity +  github)
+
+=============
+
+° TODO: monitorer la tension de la pile de sauvegarde ?
+
+° TODO: mode emploi réglage carte neuve (gui avec lib jbus ethernet ?)
+
+° TODO: garder l'ihm actuelle pour le debug, en faire une plus simple, plus lisible
+  pour les stagiaires
+
+° TODO: interface utilisateur : synoptique plutot que valeurs textuelles ?
+
+° TODO: valeurs avec password : 
+        *il faut d'abord changer juste les 2 octets de passwd
+         et ca deverouille en ecriture juste pour l'écriture d'après
+
+	 *deux pass : 1 pour horloge, et un pour les trucs qui craignent 
+                      +pwm, eeprom store, eeprom restore etc ...
+
+=============
+
+° TESTER: led verte sur syslog
+
+° TESTER: calcul de la position, calcul de l'erreur = diff avec pwmout, et affichage
+
+° TESTER: passer en bitbanding
+
+° TESTER filtrage supplémentaire sur les aquisitions de données analogiques :
+  un filtre médian (qsort) sur le courant après avoir teste que ca  fonctionne 
+  sur les positions
+
+° TESTER balayage des pwm pour trouver les pwmmin et max sur chaques servos
+  en detectant une augentation du courant consommé
+
+° TESTER position <-> pwm table : à stocker en flash une fois acquis
+
+° TESTER analyse de 3.3v pour en déduire les variations du 5V et activer un mode pwm 0
+  qui arrete tous les servos en cas de grosse chute de tension.
+
+  + ajout api dans servoPwm : enable, disable, enableAll, disableAll
+
+  + on pourra arreter tous les servos avec le bouton rouge
+  
+  + on pourra réarmer tous les servos avec le bouton vert
+
+  + en cas de surintensité sur un servo, on arrete de commander ce servo
+
+° TESTER nouvel algo stateless des commandes pwm
+
+° TESTER: retour JBUS 
+  + intensité consommée et position (read only)
+  + servo enable ou disable (read only)
+
+° TESTER: led rouge allumée si sécurité servo
+
+
+=================================================================
+
+
+
+

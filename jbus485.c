@@ -54,7 +54,7 @@ jbus485States = {
 // === REG HOLDING ===
 // test with modpoll -m rtu -a 10 -r 100 -c 19 -t 4 -b 38400 -d 8 -s 1 -p none /dev/ttyUSB0
 // === REG INPUT ===
-// test with modpoll -m rtu -a 10 -r 200 -c 25 -t 3 -b 38400 -d 8 -s 1 -p none /dev/ttyUSB0
+// test with modpoll -m rtu -a 10 -r 200 -c 31 -t 3 -b 38400 -d 8 -s 1 -p none /dev/ttyUSB0
 // === COIL ===
 // modpoll -m rtu -a 10 -r 300 -c 10 -t 0 -b 38400 -d 8 -s 1 -p none /dev/ttyUSB0
 // === DISCRETE ===

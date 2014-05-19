@@ -28,6 +28,7 @@ typedef enum {ADS_Idle=0, ADS_Jam, ADS_Accelerate, ADS_TopSpeed, ADS_Decelerate}
 
 // public method
 void servoInit (const uint32_t servoIdx);
+void servoInitAllCurrentPosAndGotoPark (const float backupCurPosIfNotCalibrated[SERVO_COUNT]);
 void initAllServos (void);
 void servoSetPos (const uint32_t servoIdx, float order);
 void servoSlidePosTowardEnd (const uint32_t servoIdx, float timeInSecond);

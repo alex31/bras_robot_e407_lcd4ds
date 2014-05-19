@@ -1,0 +1,49 @@
+GPIO_A4		ADC1
+GPIO_A6		PWM1
+GPIO_A8		PWM2
+GPIO_A10	PWM3
+GPIO_B5		PWM4
+GPIO_B9		PWM5
+GPIOE_0         IN_SWITCH_1 mode gpio in, pulldown     
+GPIOE_1         IN_SWITCH_2 mode gpio in, pulldown             
+GPIOE_4         IN_SWITCH_3 mode gpio in, pulldown             
+GPIOE_5         IN_SWITCH_4 mode gpio in, pulldown             
+GPIOE_6         IN_SWITCH_5 mode gpio in, pulldown             
+GPIOE_7         IN_DIR_1 mode gpio in, pulldown	             
+GPIOE_8         IN_DIR_2 mode gpio in, pulldown	             
+GPIOE_9         IN_DIR_3 mode gpio in, pulldown	             
+GPIOE_10        IN_DIR_4 mode gpio in, pulldown	             
+GPIOE_11        IN_DIR_5 mode gpio in, pulldown	             
+GPIOE_12        OUT_MOVE_1 mode gpio out	             
+GPIOE_13        OUT_MOVE_2 mode gpio out	             
+GPIOE_14        OUT_MOVE_3 mode gpio out	             
+GPIOE_15        OUT_MOVE_4 mode gpio out                     
+GPIOF_0         OUT_MOVE_5 mode gpio out        
+GPIOF_1                 
+GPIOF_2                 
+GPIOF_3         ADC2        
+GPIOF_4         ADC3      
+GPIOF_5         ADC4        
+GPIOF_9         ADC5        
+GPIOF_10                
+GPIOF_12                
+GPIOF_13                
+GPIOF_14                
+GPIOF_15                
+GPIOG_0                 
+GPIOG_1                 
+GPIOG_2                 
+GPIOG_3                 
+GPIOG_4                 
+GPIOG_5                 
+GPIOG_10                
+GPIOG_12                
+
+
+=========================
+
+tourelle :	pwm1, 1:droite 0:gauche  pwm:A6 adc:A4
+bras principal  pwm2, 1:haut 0:bas	 pwm:A8 adc:F3
+bras pince      pwm3, 1:haut 0:bas	 pwm:A10 adc:F4 (INVERSE)
+support pince   pwm4, 1:haut 0:bas	 pwm:B5 adc:F5
+pince		pwm5, 0:ouvert 1:ferme	 pwm:B9 adc:F9

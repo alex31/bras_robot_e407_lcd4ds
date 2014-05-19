@@ -61,11 +61,11 @@ static  Thread *		 lwipThd=NULL;
 
 
 // === PROTECTED HOLDING ===
-// test with modpoll -m tcp  -r 1666 -c 20 -t 4  192.168.2.20
+// modpoll -m tcp  -r 1666 -c 20 -t 4  192.168.2.20
 // === REG HOLDING ===
-// test with modpoll -m tcp  -r 100 -c 19 -t 4  192.168.2.20
+// modpoll -m tcp  -r 100 -c 19 -t 4  192.168.2.20
 // === REG INPUT ===
-// test with modpoll -m tcp  -r 200 -c 25 -t 3  192.168.2.20
+// modpoll -m tcp  -r 200 -c 31 -t 3  192.168.2.20
 // === COIL ===
 // modpoll -m tcp  -r 300 -c 10 -t 0  192.168.2.20
 // === DISCRETE ===

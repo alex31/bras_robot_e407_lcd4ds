@@ -1,0 +1,41 @@
+short, r/w, protected	: PwmMin, PwmMax
+			: adresse jbus, baud, nbbitsstop, parite, adresse ip (2/2),  masque (2/2)
+---
+short, r/w		: consigne (getPos), park, speed
+			: jour, mois, année, heure, minute, seconde
+
+---
+short, r/o		: [position courante (currentPos), vitesse courante, park
+			: sensorsPos, intensité consommée] x 5, tension alim 5v
+---
+
+bit, r/w,protected	: sauve eeprom : pwm, jbus, ip 
+---
+bit, r/w		: paused, memo_pos_courante_comme_pos_park
+---
+bit, r/o		: moving, bloqué, activé, butée min, butée max
+
+
+===========================================================
+
+NORMAL
+REG HOLDING (R/W)
+100 -> LCD1, LCD2, JOUR, MOIS, ANNEE, JOUR_SEMAINE, HEURE, MINUTE, SECONDE, CONSIGNE (x 5), VITESSE_MAX (x 5)
+
+PROTECTED
+REG HOLDING (R/W)
+1000 :	PASSWD1 PASSWD2 ADRJBUS BAUD NBBITSSTOP  PARITE, 
+	ADRESSE IP (2/2),  MASQUE (2/2) PWMMIN(5) PWMMAX(5) 
+
+REG INPUT (R/O)
+200 -> [POSITION_COURANTE, VITESSE_COURANTE, POSITION_PARK, POSITION_POTAR_SERVO, 
+    INTENSITE_SERVO] (x 5) TENSION_ALIM_5V
+
+REG COIL (R/W)
+300 -> POS_COURANTE_COMME_PARK, RETOUR_PARK (x 5)
+
+REG DISCRETE (R/O)
+400 -> BOUGE, BLOQUÉ, ACTIVÉ, BUTEE MIN, BUTEE MAX (x 5)
+
+
+

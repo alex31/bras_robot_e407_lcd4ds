@@ -462,7 +462,7 @@ static void displayAnalogSensorsInfo (void)
   uint32_t initPos = 12;
   for (uint8_t i=0; i<SERVO_COUNT; i++) {
     OLED_printPL (initPos++, COLOR_ANALOG, "%s Err=%.2f I=%.2f P=%.2f", 
-		  servoName[i], getErrorPercentage(i), analogGetCurrentIntensity(i), 
+		  servoName[i], getErrorRatio(i), analogGetCurrentIntensity(i), 
 		  analogGetRawPos(i)*3.3f);
   }
 }
