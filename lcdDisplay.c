@@ -596,7 +596,7 @@ uint16_t getLcd2Register (void)
 
 uint16_t getSyslogDataAsPlcRegister (uint16_t regAddr)
 {
-  if (regAddr*2 > SYSLOG_BUFFLEN*SYSLOG_LINELEN) {
+  if (regAddr*2 > (SYSLOG_BUFFLEN*SYSLOG_LINELEN)-1 ) {
     return 0;
   } else {
     const char* sysLogBuf = &(syslogCirBuf.printCopyBuffer[0][0]);

@@ -195,9 +195,9 @@ eMBRegInputCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs )
       usNRegs--;
     }
   } else if (isItValidAdress (usAddress, regInputSyslogBase, 
-			      SYSLOG_BUFFLEN*SYSLOG_LINELEN) &&
+			      (SYSLOG_BUFFLEN*SYSLOG_LINELEN)-1) &&
 	     isItValidAdress (usAddress+usNRegs, regInputSyslogBase, 
-			      SYSLOG_BUFFLEN*SYSLOG_LINELEN)) {
+			      (SYSLOG_BUFFLEN*SYSLOG_LINELEN)-1)) {
     iRegIndex = (uint32_t) usAddress - regInputSyslogBase;
     while (usNRegs > 0) {
       if (getRegInputSyslogValue (iRegIndex, &curPucReg) == FALSE) {
