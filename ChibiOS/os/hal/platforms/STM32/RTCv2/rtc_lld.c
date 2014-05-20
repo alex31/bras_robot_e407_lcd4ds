@@ -239,10 +239,10 @@ void rtc_lld_get_alarm(RTCDriver *rtcp,
  */
 #if RTC_HAS_PERIODIC_WAKEUPS
 void rtcSetPeriodicWakeup_v2(RTCDriver *rtcp, const RTCWakeup *wakeupspec){
-  chDbgCheck((wakeupspec->wakeup != 0x30000),
-              "rtc_lld_set_periodic_wakeup, forbidden combination");
 
   if (wakeupspec != NULL){
+    chDbgCheck((wakeupspec->wakeup != 0x30000),
+	       "rtc_lld_set_periodic_wakeup, forbidden combination");
     rtcp->id_rtc->CR &= ~RTC_CR_WUTE;
     while(!(rtcp->id_rtc->ISR & RTC_ISR_WUTWF))
       ;

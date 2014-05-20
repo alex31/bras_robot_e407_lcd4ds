@@ -1,4 +1,6 @@
-
+#   cov-build --dir cov-int make
+#   tar caf bras_robot_e407_lcd4ds.xz cov-int/
+ 
 
 ° TODO: analyseur statique (coverity +  github)
 
