@@ -757,8 +757,8 @@ static bool_t getRegInputValue (uint16_t iRegIndex, uint8_t **curPucReg)
 static bool_t getRegInputSyslogValue (uint16_t iRegIndex, uint8_t **curPucReg)
 {
   if (iRegIndex >= ((SYSLOG_BUFFLEN*SYSLOG_LINELEN)/2)) {
-    syslog (LOG_WARN, "syslog > syslog len : %d/%d", iRegIndex,
-	    ((SYSLOG_BUFFLEN*SYSLOG_LINELEN)/2));
+    syslog (LOG_WARN, "syslog ERR : %d>%d", iRegIndex,
+	    ((SYSLOG_BUFFLEN*SYSLOG_LINELEN)/2)-1);
     return FALSE;
   }
 
