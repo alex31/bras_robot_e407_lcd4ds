@@ -65,9 +65,11 @@ struct  PwmServo_ {
   uint32_t	pin;
 } ;
 
+#ifndef __COVERITY__
 _Static_assert(sizeof(int8_t) == sizeof (bool_t), "(sizeof(int8_t) != sizeof (bool_t)");
 _Static_assert(sizeof(int8_t) == sizeof (AccelDecelState), "(sizeof(int8_t) != sizeof (AccelDecelState)");
 _Static_assert((sizeof(Mutex) % 4)==0, "sizeof (Mutex) not 32 bits aligned");
+#endif
 
 
 
@@ -125,12 +127,14 @@ servoStates[] = {
   {.mutex =  _MUTEX_DATA(servoStates[4].mutex), .pwmServo=&servos[4]},
 };
 
+#ifndef __COVERITY__
 _Static_assert( ARRAY_LEN(servos) == ARRAY_LEN(servoStates),
 	       "servos and servoStates should be array of same length");
 
-_Static_assert(  ARRAY_LEN(servos) == SERVO_COUNT, 
+_Static_assert( ARRAY_LEN(servos) == SERVO_COUNT, 
 		"servos and servoStates should be array of same"
 		" length than macro SERVO_COUNT defined in servo_pwm.h");
+#endif
 
 static void servoSetCurrentPos (const uint32_t servoIdx, float pos);
 static float getAccelToOrder (const ServoState *st);

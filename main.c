@@ -100,9 +100,9 @@ int main(void)
 #                   \  /\  /    | (_| | \ |_   | (__  | | | | | (_| |  | (_) |   __/ |        
 #                    \/  \/      \__,_|  \__|   \___| |_| |_|  \__,_|   \___/   |___/         
 */
-  bool_t rebootFromWatchdogReset = FALSE;
 
 #ifdef WATCHDOG_ACTIVATED
+  bool_t rebootFromWatchdogReset = FALSE;
   if (RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET)  {
     rebootFromWatchdogReset = TRUE;
   }
@@ -168,9 +168,13 @@ int main(void)
     } else {
       syslog (LOG_INFO, "ArmBoard OK");
     }
+
+
+#ifdef WATCHDOG_ACTIVATED
     if (rebootFromWatchdogReset) {
       syslog (LOG_ERROR, "WATCHDOG FIRE");
     }
+#endif
   }
 
   if (allSlaveBoardPlugged) {

@@ -184,16 +184,19 @@ static const ADCConversionGroup adcgrpcfg3 = {
   ADC_SQR3_SQ5_N(GPIOF_ADC_CMD_CLAMP_CHANNEL)	        //SQR3
 };
 
+#ifndef __COVERITY__
 _Static_assert(CMD_TURRET_ADC_IDX == 3, "ADC mismatch");
 _Static_assert(CMD_SHOULDER_ADC_IDX == 3, "ADC mismatch");
 _Static_assert(CMD_ELBOW_ADC_IDX == 3, "ADC mismatch");
 _Static_assert(CMD_WRIST_ADC_IDX == 3, "ADC mismatch");
 _Static_assert(CMD_CLAMP_ADC_IDX == 3, "ADC mismatch");
+#endif
 
 #else
 #error "one board has to be defined"
 #endif
 
+#ifndef __COVERITY__
 _Static_assert(  ARRAY_LEN(analogIOS) == ADC_ADC3_NUM_CHANNELS,
 		"analogIOS should be array of same"
 		" length than macro ADC_ADCX_NUM_CHANNELS defined in board.h");
@@ -201,6 +204,8 @@ _Static_assert(  ARRAY_LEN(analogIOS) == ADC_ADC3_NUM_CHANNELS,
 _Static_assert( SERVO_COUNT  == ADC_ADC3_NUM_CHANNELS,
 		"ADC_ADC3_NUM_CHANNELS (analog position command) defined in board.h should be "
 		"equal to SERVO_COUNT defined in servo_pwm.h");
+
+#endif
 
 /* PAL_MODE_RESET */
 /* PAL_MODE_UNCONNECTED */

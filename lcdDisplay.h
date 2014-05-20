@@ -3,6 +3,9 @@
 
 #include "ch.h"
 
+#define SYSLOG_BUFFLEN 30
+#define SYSLOG_LINELEN 30
+
 typedef enum  {
   SPLIT_PAGE, SYSLOG, COSMOS
 } LcdDisplayMode;
@@ -27,5 +30,8 @@ void setLcd1Register (uint16_t v);
 void setLcd2Register (uint16_t v);
 uint16_t getLcd1Register (void);
 uint16_t getLcd2Register (void);
+
+void printCopySyslogDataForPlc (void);
+uint16_t getSyslogDataAsPlcRegister (uint16_t regAddr);
 
 #endif // __LCD_DISPLAY_H__

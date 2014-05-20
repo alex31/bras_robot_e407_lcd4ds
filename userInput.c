@@ -165,7 +165,7 @@ static uint8_t getRotaryKnobPos (void)
 					GPIOD_KNOB_ANALOG, GPIOD_KNOB_RS485,
 					GPIOD_KNOB_ETHERNET, GPIOD_KNOB_TUNING};
 
-  for (uint8_t i=0; i<= sizeof(knobGpioPin); i++) {
+  for (uint8_t i=0; i< sizeof(knobGpioPin); i++) {
     if (!bb_palReadPad (GPIOD, knobGpioPin[i])) 
       return i;
   }

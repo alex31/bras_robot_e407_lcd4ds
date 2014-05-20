@@ -49,9 +49,12 @@ static const LogicLevelIO logicLevelIOS[] = {
 #error "only compatible with BOARD_STM32_E407_STX"
 #endif
 
+#ifndef __COVERITY__
 _Static_assert(  ARRAY_LEN(logicLevelIOS) == SERVO_COUNT, 
 		"logicLevelIOS should be array of same"
 		" length than macro SERVO_COUNT defined in servo_pwm.h");
+
+#endif
 
 /* PAL_MODE_RESET */
 /* PAL_MODE_UNCONNECTED */

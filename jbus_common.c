@@ -28,6 +28,7 @@ static bool_t getOrSetProtectedRegHoldingValue (uint16_t iRegIndex,  uint8_t **c
 						eMBRegisterMode eMode);
 static bool_t getOrSetCoilValue (uint16_t iRegIndex,  uint8_t *curPucReg, eMBRegisterMode eMode);
 static bool_t getRegInputValue (uint16_t iRegIndex, uint8_t **curPucReg);
+static bool_t getRegInputSyslogValue (uint16_t iRegIndex, uint8_t **curPucReg);
 static bool_t getDiscreteValue (uint16_t iRegIndex,  uint8_t *curPucReg);
 static uint16_t normalisedToReg (float val); 
 static float regToNormalised (uint16_t val); 
@@ -49,7 +50,8 @@ const  uint32_t regHoldingBase= 100;
 const  uint32_t regInputBase= 200;
 const  uint32_t regCoilBase= 300;
 const  uint32_t regDiscreteBase= 400;
-const  uint32_t protectedRegHoldingBase= 1666;
+const  uint32_t regInputSyslogBase= 1000;
+const  uint32_t protectedRegHoldingBase= 2000;
 
 typedef enum  {LCD1=0, LCD2, JOUR, MOIS, ANNEE, JOUR_SEMAINE, HEURE, MINUTE, SECONDE, 
 	       CONSIGNE, VITESSE_MAX, REG_HOLDING_END} RegHolding;
@@ -125,7 +127,7 @@ eMBRegHoldingCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs, eMBRegi
   const uint32_t regHoldingEnd =  REG_HOLDING_END + 
     ((REG_HOLDING_END - CONSIGNE) * SERVO_COUNT);
 
-  usAddress += getRegOffset(); // in case of offset range between plc and freemobus 
+  usAddress += getRegOffset(); // in case of offset range between plc and freemodbus 
 
   //  DebugTrace ("HoldingCB ad[0x%x] usNRegs[%d] eMode[%d]", usAddress, usNRegs, eMode);
   setLastFunction (FUNC_HOLDING);
@@ -174,7 +176,7 @@ eMBRegInputCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs )
   eMBErrorCode    eStatus = MB_ENOERR;
   uint32_t        iRegIndex;
   uint8_t *curPucReg = pucRegBuffer;
-  usAddress += getRegOffset(); // in case of offset range between plc and freemobus 
+  usAddress += getRegOffset(); // in case of offset range between plc and freemodbus 
 
   //DebugTrace ("InputCB ad[0x%x] usNRegs[%d]", usAddress, usNRegs);
   setLastFunction (FUNC_INPUT);
@@ -192,6 +194,20 @@ eMBRegInputCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs )
       iRegIndex++;
       usNRegs--;
     }
+  } else if (isItValidAdress (usAddress, regInputSyslogBase, 
+			      SYSLOG_BUFFLEN*SYSLOG_LINELEN) &&
+	     isItValidAdress (usAddress+usNRegs, regInputSyslogBase, 
+			      SYSLOG_BUFFLEN*SYSLOG_LINELEN)) {
+    iRegIndex = (uint32_t) usAddress - regInputSyslogBase;
+    while (usNRegs > 0) {
+      if (getRegInputSyslogValue (iRegIndex, &curPucReg) == FALSE) {
+	eStatus = MB_EINVAL;
+	goto cleanAndExitICB;
+      }
+      iRegIndex++;
+      usNRegs--;
+    }
+ 
   } else {
     eStatus = MB_ENOREG;
     syslog (LOG_ERROR, "Input bad @ %d/%d",  usAddress, usNRegs);
@@ -206,7 +222,7 @@ eMBRegCoilsCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNCoils, eMBRegis
 {
   eMBErrorCode    eStatus = MB_ENOERR;
   uint32_t        iRegIndex;
-  usAddress += getRegOffset(); // in case of offset range between plc and freemobus 
+  usAddress += getRegOffset(); // in case of offset range between plc and freemodbus 
 
   //DebugTrace ("RegCoilsCB ad[0x%x] usNCoils[%d]", usAddress, usNCoils);
   setLastFunction (FUNC_COIL);
@@ -215,8 +231,8 @@ eMBRegCoilsCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNCoils, eMBRegis
   setLastNbReg (usNCoils);
 
 
-  if (isItValidAdress (usAddress, regCoilBase, REG_COIL_END*SERVO_COUNT) &&
-      isItValidAdress (usAddress+usNCoils, regCoilBase, REG_COIL_END*SERVO_COUNT)) {
+  if (isItValidAdress (usAddress, regCoilBase, (REG_COIL_END*SERVO_COUNT)+1) &&
+      isItValidAdress (usAddress+usNCoils, regCoilBase, (REG_COIL_END*SERVO_COUNT)+1)) {
     iRegIndex = (uint32_t) usAddress - regCoilBase;
     while (usNCoils > 0) {
       if (getOrSetCoilValue (iRegIndex, pucRegBuffer, eMode) == FALSE) {
@@ -240,7 +256,7 @@ eMBRegDiscreteCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNDiscrete )
 {
   eMBErrorCode    eStatus = MB_ENOERR;
   uint32_t        iRegIndex;
-  usAddress += getRegOffset(); // in case of offset range between plc and freemobus 
+  usAddress += getRegOffset(); // in case of offset range between plc and freemodbus 
 
   //DebugTrace ("RegDiscreteCB ad[0x%x] usNDiscrete[%d]", usAddress, usNDiscrete);
   setLastFunction (FUNC_DISCRETE);
@@ -738,45 +754,68 @@ static bool_t getRegInputValue (uint16_t iRegIndex, uint8_t **curPucReg)
   return TRUE;
 }
 
+static bool_t getRegInputSyslogValue (uint16_t iRegIndex, uint8_t **curPucReg)
+{
+  if (iRegIndex >= ((SYSLOG_BUFFLEN*SYSLOG_LINELEN)/2)) {
+    syslog (LOG_WARN, "syslog > syslog len : %d/%d", iRegIndex,
+	    ((SYSLOG_BUFFLEN*SYSLOG_LINELEN)/2));
+    return FALSE;
+  }
+
+  storeReg (curPucReg, getSyslogDataAsPlcRegister (iRegIndex));
+  return TRUE;
+}
+
 
 static bool_t getOrSetCoilValue (uint16_t iRegIndex,  uint8_t *curPucReg, eMBRegisterMode eMode)
 {
   const  RegCoil type = iRegIndex % REG_COIL_END;
   const  uint32_t servoNum = iRegIndex / REG_COIL_END;
 
-  if (servoNum >= SERVO_COUNT) 
-    return FALSE;
-  
-  switch (type) {
-  case SETPARK:
-    if (eMode == MB_REG_READ) {
-      xMBUtilSetBits (curPucReg, iRegIndex, 1, 0);
-      setLastValue (0);
-    } else {  
-      setLastValue (xMBUtilGetBits (curPucReg, iRegIndex, 1));
-      if (xMBUtilGetBits (curPucReg, iRegIndex, 1)) {
-	for (uint32_t idx=0; idx<SERVO_COUNT; idx++) 
-	  servoSetCurrentPosAsPark(idx);
+  if (servoNum < SERVO_COUNT) {
+    switch (type) {
+    case SETPARK:
+      if (eMode == MB_REG_READ) {
+	xMBUtilSetBits (curPucReg, iRegIndex, 1, 0);
+	setLastValue (0);
+      } else {  
+	setLastValue (xMBUtilGetBits (curPucReg, iRegIndex, 1));
+	if (xMBUtilGetBits (curPucReg, iRegIndex, 1)) {
+	  for (uint32_t idx=0; idx<SERVO_COUNT; idx++) 
+	    servoSetCurrentPosAsPark(idx);
+	}
       }
-    }
-    break;
-    
-  case GOTO_PARK:
-    if (eMode == MB_REG_READ) {
-      xMBUtilSetBits (curPucReg, iRegIndex, 1, 0);
-      setLastValue (0);
-    } else {  
-      setLastValue (xMBUtilGetBits (curPucReg, iRegIndex, 1));
-      if (xMBUtilGetBits (curPucReg, iRegIndex, 1)) {
-	for (uint32_t idx=0; idx<SERVO_COUNT; idx++) 
-	  servoPark(idx);
+      break;
+      
+    case GOTO_PARK:
+      if (eMode == MB_REG_READ) {
+	xMBUtilSetBits (curPucReg, iRegIndex, 1, 0);
+	setLastValue (0);
+      } else {  
+	setLastValue (xMBUtilGetBits (curPucReg, iRegIndex, 1));
+	if (xMBUtilGetBits (curPucReg, iRegIndex, 1)) {
+	  for (uint32_t idx=0; idx<SERVO_COUNT; idx++) 
+	    servoPark(idx);
+	}
       }
+      break;
+      
+      
+    case REG_COIL_END:
+      break;
     }
-    break;
-    
-    
-  case REG_COIL_END:
-    break;
+  } else {
+    const uint16_t afterServoRegIndex = iRegIndex - (REG_COIL_END*SERVO_COUNT);
+    if (afterServoRegIndex == 0) {
+      // trigger syslog print copy when read or write this coil
+      if (eMode == MB_REG_READ) {
+	xMBUtilSetBits (curPucReg, iRegIndex, 1, 0);
+	setLastValue (0);
+      } else {  
+	setLastValue (xMBUtilGetBits (curPucReg, iRegIndex, 1));
+      }
+      printCopySyslogDataForPlc ();
+    }
   }
   
   return TRUE; 

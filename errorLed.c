@@ -44,12 +44,14 @@ static const GpioLed  ledPins[] = {
   {.gpio = {.gpio = GPIOC, .pin = GPIOC_LED},       .activeLow = TRUE}
 }; 
 
+#ifndef __COVERITY__
 _Static_assert(  ARRAY_LEN(ledPins) == LED_COUNT, 
 		"ledPins should be array of same"
 		" length than macro LED_COUNT");
 _Static_assert(  ARRAY_LEN(ledPinParams) == LED_COUNT, 
 		"ledPinParams should be array of same"
 		" length than macro LED_COUNT");
+#endif
 
 static __attribute__((noreturn)) msg_t errorLedThd(void *arg) ;
 

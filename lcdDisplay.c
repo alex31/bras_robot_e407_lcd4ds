@@ -74,8 +74,6 @@ static oledConfig olc;
 #define NB_CHAR_ON_WIDTH (SCREEN_WIDTH/CHAR_WIDTH)
 #define NB_CHAR_ON_HEIGHT ((SCREEN_HEIGHT/CHAR_HEIGHT)-1)
 
-#define BUFFLEN 30
-#define LINELEN 30
 
 typedef enum {EC_COLOR0, EC_COLOR1, EC_COLOR2, EC_COLOR3, EC_COLOR4, 
 	      EC_COLOR5, EC_COLOR6, EC_COLOR7, EC_COLOR8, EC_COLOR_NONE,
@@ -85,7 +83,8 @@ typedef struct
 {
   int32_t idx;
   uint32_t repeat;
-  char buffer [BUFFLEN][LINELEN] ;
+  char buffer [SYSLOG_BUFFLEN][SYSLOG_LINELEN] ;
+  char printCopyBuffer[SYSLOG_BUFFLEN][SYSLOG_LINELEN] ;
   Mutex mutex;
 } SyslogCirBuf;
 
@@ -121,7 +120,7 @@ void syslogErrorFromISR (const char* msg)
 void syslog (LogSeverity ls, const char *fmt, ...)
 {
   va_list ap;
-  char tmp [LINELEN], tmp1[LINELEN];
+  char tmp [SYSLOG_LINELEN], tmp1[SYSLOG_LINELEN];
   static uint32_t repeat=0;
 
   chMtxLock(&syslogCirBuf.mutex);
@@ -148,39 +147,39 @@ void syslog (LogSeverity ls, const char *fmt, ...)
   };
 
   va_start(ap, fmt);
-  chvsnprintf (tmp1, LINELEN-TSLEN, fmt, ap); 
+  chvsnprintf (tmp1, SYSLOG_LINELEN-TSLEN, fmt, ap); 
   va_end(ap);
-  chsnprintf (tmp, LINELEN-TSLEN, "%s%s", bal[ls].st, tmp1); 
+  chsnprintf (tmp, SYSLOG_LINELEN-TSLEN, "%s%s", bal[ls].st, tmp1); 
 
   if (repeat == 0) {
-    if (strncmp (tmp, &(syslogCirBuf.buffer[getSyslogIdx(0)][TSLEN]), LINELEN-TSLEN) != 0) {
+    if (strncmp (tmp, &(syslogCirBuf.buffer[getSyslogIdx(0)][TSLEN]), SYSLOG_LINELEN-TSLEN) != 0) {
       //      DebugTrace ("'%s' ne '%s'", tmp, &(syslogCirBuf.buffer[getSyslogIdx(0)][TSLEN]));
       chsnprintf (syslogCirBuf.buffer[syslogCirBuf.idx], TSLEN, "%.02d:%.02d>", getMinute(), getSecond()); 
-      memcpy (&(syslogCirBuf.buffer[syslogCirBuf.idx][TSLEN]), tmp, LINELEN-TSLEN);
-      syslogCirBuf.idx = (syslogCirBuf.idx+1) % BUFFLEN;
+      memcpy (&(syslogCirBuf.buffer[syslogCirBuf.idx][TSLEN]), tmp, SYSLOG_LINELEN-TSLEN);
+      syslogCirBuf.idx = (syslogCirBuf.idx+1) % SYSLOG_BUFFLEN;
     } else {
       //      DebugTrace ("repeat first time");
       repeat++;
       chsnprintf (syslogCirBuf.buffer[syslogCirBuf.idx], TSLEN, "%.02d:%.02d>", getMinute(), getSecond());
-      chsnprintf (&(syslogCirBuf.buffer[syslogCirBuf.idx][TSLEN]), LINELEN-TSLEN, " Repete %d fois", repeat+1);
-      syslogCirBuf.idx = (syslogCirBuf.idx+1) % BUFFLEN;
+      chsnprintf (&(syslogCirBuf.buffer[syslogCirBuf.idx][TSLEN]), SYSLOG_LINELEN-TSLEN, " Repete %d fois", repeat+1);
+      syslogCirBuf.idx = (syslogCirBuf.idx+1) % SYSLOG_BUFFLEN;
     }
   } else {
-    if (strncmp (tmp, &(syslogCirBuf.buffer[getSyslogIdx(1)][TSLEN]), LINELEN-TSLEN) != 0) {
+    if (strncmp (tmp, &(syslogCirBuf.buffer[getSyslogIdx(1)][TSLEN]), SYSLOG_LINELEN-TSLEN) != 0) {
       //      DebugTrace ("stop repeat");
       chsnprintf (syslogCirBuf.buffer[syslogCirBuf.idx], TSLEN, "%.02d:%.02d>", getMinute(), getSecond()); 
-      memcpy (&(syslogCirBuf.buffer[syslogCirBuf.idx][TSLEN]), tmp, LINELEN-TSLEN);
-      syslogCirBuf.idx = (syslogCirBuf.idx+1) % BUFFLEN;
+      memcpy (&(syslogCirBuf.buffer[syslogCirBuf.idx][TSLEN]), tmp, SYSLOG_LINELEN-TSLEN);
+      syslogCirBuf.idx = (syslogCirBuf.idx+1) % SYSLOG_BUFFLEN;
       repeat = 0;
     } else {
       //      DebugTrace ("more repeat");
       repeat++;
       chsnprintf (syslogCirBuf.buffer[getSyslogIdx(0)], TSLEN, "%.02d:%.02d>", getMinute(), getSecond());
-      chsnprintf (&(syslogCirBuf.buffer[getSyslogIdx(0)][TSLEN]), LINELEN-TSLEN, " Repete %d fois", repeat+1);
+      chsnprintf (&(syslogCirBuf.buffer[getSyslogIdx(0)][TSLEN]), SYSLOG_LINELEN-TSLEN, " Repete %d fois", repeat+1);
     }
   }
 
-  syslogCirBuf.buffer[syslogCirBuf.idx][LINELEN-1]=0;
+  syslogCirBuf.buffer[syslogCirBuf.idx][SYSLOG_LINELEN-1]=0;
   chMtxUnlock();
 }
 
@@ -194,7 +193,7 @@ static const char* getSyslog (int32_t historyIdx, TimeStampFmt tsm)
 static int32_t getSyslogIdx (int32_t historyIdx)
 {
   int32_t idx = syslogCirBuf.idx - historyIdx - 1;
-  while (idx < 0) idx += BUFFLEN;
+  while (idx < 0) idx += SYSLOG_BUFFLEN;
   return idx;
 }
 
@@ -202,7 +201,8 @@ static int32_t getSyslogIdx (int32_t historyIdx)
 bool_t initLcdDisplay (void)
 {
   syslogCirBuf.idx = syslogCirBuf.repeat = 0;
-  memset (syslogCirBuf.buffer, 0, BUFFLEN*LINELEN);
+  memset (syslogCirBuf.buffer, 0, SYSLOG_BUFFLEN*SYSLOG_LINELEN);
+  memset (syslogCirBuf.printCopyBuffer, 0, SYSLOG_BUFFLEN*SYSLOG_LINELEN);
   chMtxInit(&syslogCirBuf.mutex);
 
   oledInit (&olc, &SD6, 256000, GPIOC, GPIOC_LCD_RST, PICASO);
@@ -594,6 +594,48 @@ uint16_t getLcd2Register (void)
   return lcd2_val;
 }
 
+uint16_t getSyslogDataAsPlcRegister (uint16_t regAddr)
+{
+  if (regAddr*2 > SYSLOG_BUFFLEN*SYSLOG_LINELEN) {
+    return 0;
+  } else {
+    const char* sysLogBuf = &(syslogCirBuf.printCopyBuffer[0][0]);
+
+    return (sysLogBuf[regAddr*2] << 8) | sysLogBuf[1+(regAddr*2)];
+  }
+}
+
+void printCopySyslogDataForPlc (void)
+{
+  char min[3]="   ", sec[3]="   ";
+  const uint32_t nb = SYSLOG_BUFFLEN;
+
+  chMtxLock(&syslogCirBuf.mutex);
+  //  for (uint32_t i=0; i<nb; i++) {
+  for (int32_t i=nb-1; i>=0; i--) {
+    const char* slmsg = getSyslog (i, TS_MIN_SEC);
+    if (strncmp (slmsg, min, ARRAY_LEN(min)) != 0) {
+      // minutes differs, print entire timestamp
+      memcpy (min, slmsg, ARRAY_LEN(min));
+      chsnprintf (syslogCirBuf.printCopyBuffer[i], SYSLOG_LINELEN,  getSyslog (i, TS_MIN_SEC));
+    } else {
+      // in the same minute, test second
+         if (strncmp (&slmsg[ARRAY_LEN(min)], sec, ARRAY_LEN(sec)) != 0) {
+	   // seconds differs, print timestamp with only seconds
+	   memcpy (sec, &slmsg[ARRAY_LEN(min)], ARRAY_LEN(sec));
+	   chsnprintf (syslogCirBuf.printCopyBuffer[i], SYSLOG_LINELEN,  getSyslog (i, TS_SEC));
+	 } else {
+	   // in the same minute, same second
+	   chsnprintf (syslogCirBuf.printCopyBuffer[i], SYSLOG_LINELEN,  getSyslog (i, TS_NONE));
+	 }
+    }
+  }
+  chMtxUnlock();
+}
+
+
+
+
 static char * bargraph(const float normalised)
 {
   static char bgraph[20];
@@ -602,3 +644,4 @@ static char * bargraph(const float normalised)
   bgraph[len]=0;
   return bgraph;
 }
+
